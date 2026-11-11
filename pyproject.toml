@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mega7"
+version = "0.1.0"
+description = "Risk, correlation, factor and index decomposition of the seven largest US technology-led stocks"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Xiangzhong (Shaun) Meng" }]
+dependencies = [
+    "numpy",
+    "pandas",
+    "scipy",
+    "duckdb",
+    "matplotlib",
+    "requests",
+    "yfinance",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

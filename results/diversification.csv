@@ -1,0 +1,4 @@
+weights,covariance,portfolio_vol,weighted_avg_stock_vol,diversification_ratio,largest_contributor,largest_share
+equal weight,full sample 2012-05-21 to 2026-11-10,0.266388,0.367353,1.37901,TSLA,0.210047
+equal weight,last 252 days 2025-11-10 to 2026-11-10,0.223475,0.361226,1.6164,TSLA,0.208469
+current market caps (2026-11-11),last 252 days 2025-11-10 to 2026-11-10,0.204488,0.341214,1.66863,NVDA,0.217888

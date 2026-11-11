@@ -1,0 +1,7 @@
+condition,days,spy_daily_vol,avg_pairwise_corr,avg_pairwise_corr_if_only_spy_vol_changed,excess_over_benchmark
+All days,3640,0.0104844,0.463712,0.463712,2.22045e-16
+SPY up days,2009,0.00730858,0.312752,0.336606,-0.0238537
+SPY down days,1620,0.00853823,0.400233,0.387195,0.0130379
+SPY worst 10% of days,364,0.0108615,0.40704,0.477749,-0.0707091
+SPY middle 80% of days,2912,0.00494803,0.253284,0.241988,0.0112966
+SPY best 10% of days,364,0.0101083,0.394038,0.449423,-0.0553852

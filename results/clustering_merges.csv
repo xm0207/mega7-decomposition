@@ -1,0 +1,13 @@
+input,step,left,right,distance,implied_correlation,size
+Raw daily returns,1,GOOGL,AMZN,0.885508,0.607937,2
+Raw daily returns,2,MSFT,GOOGL + AMZN,0.906613,0.589027,3
+Raw daily returns,3,AAPL,MSFT + GOOGL + AMZN,0.98839,0.511542,4
+Raw daily returns,4,NVDA,AAPL + MSFT + GOOGL + AMZN,1.00611,0.493871,5
+Raw daily returns,5,META,NVDA + AAPL + MSFT + GOOGL + AMZN,1.03744,0.461859,6
+Raw daily returns,6,TSLA,META + NVDA + AAPL + MSFT + GOOGL + AMZN,1.13387,0.357175,7
+Residuals after removing SPY,1,GOOGL,AMZN,1.16006,0.327127,2
+Residuals after removing SPY,2,META,GOOGL + AMZN,1.21976,0.256096,3
+Residuals after removing SPY,3,MSFT,META + GOOGL + AMZN,1.27247,0.190405,4
+Residuals after removing SPY,4,NVDA,MSFT + META + GOOGL + AMZN,1.3197,0.129202,5
+Residuals after removing SPY,5,AAPL,NVDA + MSFT + META + GOOGL + AMZN,1.35274,0.085048,6
+Residuals after removing SPY,6,TSLA,AAPL + NVDA + MSFT + META + GOOGL + AMZN,1.35647,0.0799894,7

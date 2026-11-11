@@ -1,0 +1,4 @@
+frequency,first_return,last_return,observations,avg_pairwise_corr,avg_corr_to_spy,highest_pair,highest,lowest_pair,lowest
+daily,2012-05-21,2026-11-10,3640,0.463712,0.620141,GOOGL-AMZN,0.607937,META-TSLA,0.296188
+weekly,2012-05-25,2026-11-06,755,0.417464,0.577421,GOOGL-AMZN,0.580093,META-TSLA,0.252754
+monthly,2012-06-30,2026-10-31,173,0.395879,0.549787,GOOGL-AMZN,0.616306,AAPL-META,0.247195

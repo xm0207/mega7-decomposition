@@ -1,0 +1,13 @@
+# Downloaded prices (Yahoo Finance, personal use only), factor files and the DuckDB database are
+# rebuilt with scripts/download_data.py and are never committed
+data/
+
+# Python
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+
+# OS
+.DS_Store
