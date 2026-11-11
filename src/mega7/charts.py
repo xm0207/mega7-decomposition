@@ -37,6 +37,9 @@ BLUES = LinearSegmentedColormap.from_list(
 # Diverging blue <-> red with a neutral grey midpoint, for signed values such as factor betas.
 DIVERGING = LinearSegmentedColormap.from_list("diverging", ["#184f95", "#6da7ec", "#f0efec", "#ec8b8a", "#b52f2f"])
 SHADE = "#f0efec"
+# The parts of a return in the event study: the two systematic parts in blues, alpha in amber and the
+# company-specific part in Nvidia's colour. The four were checked together for colour-vision deficiency.
+PART_COLOURS = {"market": "#184f95", "sector": "#6da7ec", "alpha": "#eda100", "abnormal": COLOURS["NVDA"]}
 
 
 def style() -> None:
@@ -207,4 +210,58 @@ def bar_chart(values: pd.Series, title: str, xlabel: str, fmt: str = "{:.0%}", c
     ax.set_xlabel(xlabel)
     ax.set_title(title)
     ax.margins(x=0.12)
+    return fig
+
+
+def stacked_parts(panels: dict[str, pd.DataFrame], groups: list[tuple[str, list]], part_labels: dict[str, str],
+                  title: str):
+    """Each day's return split into parts, one bar per day, one panel per model; the panels share the y axis.
+
+    `panels` maps a panel title to a frame indexed by date, with a `return` column and one column per
+    key of `part_labels` (in stacking order). Positive parts are stacked upwards from zero and negative
+    parts downwards, so a bar spans the day's gross gains and losses; a dot marks the actual return,
+    which is also printed under the date. `groups` lists (label, dates) for days drawn side by side.
+    """
+    style()
+    fig, axes = plt.subplots(1, len(panels), figsize=(5.4 * len(panels), 4.8), sharey=True)
+    axes = np.atleast_1d(axes)
+    positions, ticks = [], []
+    x = 0.0
+    for label, dates in groups:
+        start = x
+        for d in dates:
+            positions.append((pd.Timestamp(d), x))
+            x += 1.0
+        ticks.append((label, (start + x - 1.0) / 2))
+        x += 0.7
+    for ax, (panel_title, frame) in zip(axes, panels.items()):
+        ax.grid(axis="x", visible=False)
+        ax.axhline(0, color=AXIS, lw=0.8, zorder=1)
+        labels = []
+        for day, xpos in positions:
+            row = frame.loc[day]
+            up = down = 0.0
+            for part in part_labels:
+                value = 100 * row[part]
+                bottom = up if value >= 0 else down
+                ax.bar(xpos, value, bottom=bottom, width=0.62, color=PART_COLOURS[part], edgecolor=SURFACE,
+                       linewidth=1.0, zorder=2, label=part_labels[part] if day == positions[0][0] else None)
+                if value >= 0:
+                    up += value
+                else:
+                    down += value
+            ax.scatter(xpos, 100 * row["return"], s=34, color=INK, edgecolor=SURFACE, linewidth=1.2, zorder=3,
+                       label="Actual return" if day == positions[0][0] else None)
+            labels.append(f"{day.day} {day:%b}\n{100 * row['return']:+.1f}%".replace("-", "\u2212"))
+        ax.set_xticks([p for _, p in positions], labels)
+        ax.tick_params(axis="x", length=0, colors=INK_2)
+        for label, centre in ticks:
+            ax.text(centre, 1.01, label, transform=ax.get_xaxis_transform(), ha="center", va="bottom", fontsize=8,
+                    color=INK_2)
+        ax.set_title(panel_title, pad=22)
+    axes[0].set_ylabel("Percentage points of the day's return")
+    handles, names = axes[0].get_legend_handles_labels()
+    fig.legend(handles, names, loc="lower center", ncol=len(names), bbox_to_anchor=(0.5, -0.02))
+    fig.suptitle(title, x=0.01, ha="left", fontsize=11, fontweight="bold", color=INK)
+    fig.tight_layout(rect=(0, 0.06, 1, 1))
     return fig

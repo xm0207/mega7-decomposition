@@ -1,0 +1,5 @@
+date,event,sector_factor,abnormal_rolling,z_rolling,abnormal_event_study,rank_abnormal_from_lowest,rank_z_from_lowest,history_days,share_at_or_below_abnormal,share_at_or_below_z,history_start,history_end,history_min_abnormal,history_min_abnormal_date,history_min_z,history_min_z_date,history_days_z_below_minus_4,history_days_z_below_minus_4_if_normal
+2026-11-09,November 2026,SMH,-0.084377,-5.03682,-0.0844863,20,10,6378,0.00313578,0.00156789,2001-07-02,2026-11-10,-0.317559,2004-08-06,-12.501,2004-08-06,18,0.201999
+2026-11-09,November 2026,Peers ex-NVDA (equal weight),-0.0884632,-4.93914,-0.0885211,19,10,6378,0.00297899,0.00156789,2001-07-02,2026-11-10,-0.324275,2004-08-06,-12.9048,2004-08-06,16,0.201999
+2025-01-27,"DeepSeek, January 2025",SMH,-0.0429732,-2.44705,-0.0429732,126,76,6378,0.0197554,0.011916,2001-07-02,2026-11-10,-0.317559,2004-08-06,-12.501,2004-08-06,18,0.201999
+2025-01-27,"DeepSeek, January 2025",Peers ex-NVDA (equal weight),-0.103099,-4.41306,-0.103099,14,13,6378,0.00219505,0.00203826,2001-07-02,2026-11-10,-0.324275,2004-08-06,-12.9048,2004-08-06,16,0.201999

@@ -13,6 +13,11 @@ STOCKS = ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA"]
 BENCHMARKS = ["SPY", "QQQ", "RSP"]
 TICKERS = STOCKS + BENCHMARKS
 FACTORS = ["Mkt-RF", "SMB", "HML", "RMW", "CMA", "Mom"]
+# Used only by the event study: the semiconductor ETF, and large semiconductor peers that exclude
+# Nvidia (an equal-weight basket of them is the sector factor in the robustness check).
+SECTOR_ETF = "SMH"
+SEMI_PEERS = ["AVGO", "AMD", "TSM", "MU", "QCOM", "ASML", "INTC", "TXN"]
+SEMIS = [SECTOR_ETF] + SEMI_PEERS
 
 NAMES = {
     "AAPL": "Apple",
@@ -25,6 +30,15 @@ NAMES = {
     "SPY": "S&P 500 (SPY)",
     "QQQ": "Nasdaq-100 (QQQ)",
     "RSP": "Equal-weight S&P 500 (RSP)",
+    "SMH": "VanEck Semiconductor ETF (SMH)",
+    "AVGO": "Broadcom",
+    "AMD": "Advanced Micro Devices",
+    "TSM": "Taiwan Semiconductor (ADR)",
+    "MU": "Micron Technology",
+    "QCOM": "Qualcomm",
+    "ASML": "ASML (ADR)",
+    "INTC": "Intel",
+    "TXN": "Texas Instruments",
 }
 
 TRADING_DAYS = 252
@@ -53,6 +67,8 @@ def drop_unfinished_last_period(returns: pd.DataFrame, frequency: str, last_clos
 
 class ReturnPanel:
     """Daily, weekly and monthly returns of the ten tickers, plus factor returns and the risk-free rate.
+    Other series in the store (the semiconductor ETF and peers of the event study) are reachable
+    through `history`; the default views stay on the ten tickers.
 
     Why a class: the panel is built once from the database and then asked for many slightly
     different views (one frequency, the common sample or each stock's own history, excess returns).

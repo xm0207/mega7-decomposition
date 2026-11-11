@@ -68,6 +68,16 @@ def test_parse_history_with_an_explicit_today():
     assert list(frame["date"].dt.day) == [9, 10]
 
 
+def test_fetch_can_stop_at_an_end_date(monkeypatch):
+    # a series added later is cut at the last close already stored for the others
+    fake_yfinance(monkeypatch, yahoo_history([1.0, 2.0, 3.0, 4.0], start="2026-11-06"))  # Fri 6 to Wed 11 Nov
+    frame = YahooClient(pause=0).fetch("SMH", end="2026-11-10")
+    assert list(frame["date"].dt.strftime("%Y-%m-%d")) == ["2026-11-06", "2026-11-09", "2026-11-10"]
+    history = yahoo_history([1.0, 2.0, 3.0], start="2026-11-09")
+    cut = YahooClient.parse_history("SMH", history, today=pd.Timestamp("2026-11-30"), end=pd.Timestamp("2026-11-09"))
+    assert list(cut["value"]) == [1.0]
+
+
 def test_fetch_retries_empty_answers_and_errors(monkeypatch):
     calls = fake_yfinance(monkeypatch, pd.DataFrame(), RuntimeError("Too Many Requests"), yahoo_history([5.0, 6.0]))
     frame = YahooClient(attempts=3, pause=0).fetch("SPY")

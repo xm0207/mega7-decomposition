@@ -15,6 +15,7 @@ This project takes apart the seven large US stocks often called the "Magnificent
 - [Factor decomposition](#factor-decomposition)
 - [The seven as a portfolio and in the index](#the-seven-as-a-portfolio-and-in-the-index)
 - [Tail co-movement](#tail-co-movement)
+- [Event study: Nvidia, November 2026](#event-study-nvidia-november-2026)
 - [Design](#design)
 - [How to run](#how-to-run)
 - [Limitations](#limitations)
@@ -27,6 +28,7 @@ This project takes apart the seven large US stocks often called the "Magnificent
 | GOOGL | Yahoo Finance | 19 Aug 2004 | Alphabet class A shares |
 | META | Yahoo Finance | 18 May 2012 | The IPO day. The ticker was FB until 9 June 2022; Yahoo keeps the whole history under META |
 | SPY, QQQ, RSP | Yahoo Finance | 29 Jan 1993, 10 Mar 1999, 1 May 2003 | S&P 500, Nasdaq-100 and equal-weight S&P 500 ETFs |
+| SMH; AVGO, AMD, TSM, MU, QCOM, ASML, INTC, TXN | Yahoo Finance | 5 Jun 2000 (SMH); 1 Jun 1972 (TXN) to 6 Aug 2009 (AVGO) | Event study only: the VanEck Semiconductor ETF and eight large semiconductor stocks without Nvidia. TSM and ASML are US-listed ADRs |
 | Fama–French five factors, momentum, RF | Ken French data library, daily and monthly | Files end 30 Sep 2026 | Built from the September 2026 CRSP database |
 
 Coverage of every series is in [`results/data_coverage.csv`](results/data_coverage.csv). Prices run to 10 November 2026, the latest complete close when the data were downloaded on 11 November 2026.
@@ -37,7 +39,7 @@ Coverage of every series is in [`results/data_coverage.csv`](results/data_covera
 - **Factor dates.** The Ken French files end on 30 September 2026, so factor regressions end there. For Sharpe and Sortino ratios after that date, the last published daily risk-free rate is carried forward for the 29 trading days to 10 November (column `rf_days_carried_forward` in [`results/stock_metrics_common.csv`](results/stock_metrics_common.csv)).
 - **Market caps are current, not historical.** [`results/current_market_caps.csv`](results/current_market_caps.csv) holds Yahoo's market capitalisations on 11 November 2026. They are used once, labelled as current, to weight the seven among themselves. No historical index weights are used, because they are not in the data.
 
-**Data use.** Yahoo Finance data are for personal use. The downloaded prices stay in `data/`, which is not committed and is rebuilt by `scripts/download_data.py`. Everything in `results/` is a summary statistic or a chart: metrics, correlation matrices, betas, calendar-year returns, and rolling statistics sampled at month end. No daily or weekly price or return series is published. `ResultsWriter` enforces this in code: it refuses to write any table holding more than 120 dates spaced less than 25 days apart, and a test checks that rule.
+**Data use.** Yahoo Finance data are for personal use. The downloaded prices stay in `data/`, which is not committed and is rebuilt by `scripts/download_data.py`. Everything in `results/` is a summary statistic or a chart: metrics, correlation matrices, betas, calendar-year returns, rolling statistics sampled at month end, and returns on a few named event days and windows. No daily or weekly price or return series is published. `ResultsWriter` enforces this in code: it refuses to write any table holding more than 120 dates spaced less than 25 days apart, and a test checks that rule.
 
 ## Findings
 
@@ -62,6 +64,8 @@ Each finding cites the file it comes from.
 9. **Large, significant alphas are what hindsight selection produces.** The equal-weight basket's six-factor alpha is 15.8% a year (Newey–West t = 4.2); NVDA's is 31.8% (t = 2.8) ([`factor_regressions.csv`](results/factor_regressions.csv)). These are the alphas of stocks chosen for having done well, so they are not evidence of a strategy anyone could have run.
 
 10. **The cap-weighted index increasingly moves with these seven, while the equal-weighted index does not.** The share of SPY's daily variance explained by the equal-weight basket (R² over the trailing year) was 0.33 at the end of 2013, 0.84 at the end of 2022 and 0.71 on 10 November 2026; for RSP the same R² is 0.22 now ([`concentration_month_end.csv`](results/concentration_month_end.csv)). Cap-weighted beat equal-weighted by 12.5 percentage points in 2023 and 12.1 in 2024, and trails by 5.9 points in 2026 to date ([`portfolio_calendar_years.csv`](results/portfolio_calendar_years.csv)). Each one-point monthly outperformance of the basket over RSP comes with 0.19 points of SPY over RSP (t = 7.6, R² 0.46) ([`concentration_regression.csv`](results/concentration_regression.csv)).
+
+11. **Nvidia's November 2026 sell-off was mostly company-specific, but not on its worst day.** On 5 November NVDA fell 9.3%; SPY's 4.4% fall, at a beta of 1.89, accounts for −8.3 points, and Nvidia's own part was −0.6% (z −0.3). On 9 November, the first trading day after its board announced an independent investigation, NVDA fell only 4.3% while SPY rose 2.4%. Its company-specific part that day was −8.4% (z −5.0), the 10th-lowest z-score of 6,378 trading days since July 2001. A semiconductor basket without Nvidia in place of SMH gives the same reading of both days. It does change the DeepSeek day (27 January 2025), whose company-specific part is −4.3% with SMH and −10.3% with the basket ([`event_study_days.csv`](results/event_study_days.csv), [`event_study_ranks.csv`](results/event_study_ranks.csv)).
 
 ## Per-stock risk and return
 
@@ -376,6 +380,92 @@ Two caveats. The copula is fitted in-sample to the same data, and counts of 10 o
 
 ![Joint crashes against benchmarks](results/joint_crashes.png)
 
+## Event study: Nvidia, November 2026
+
+From its highest close, on 6 October 2026, to 10 November 2026, Nvidia fell 29.4% while SPY fell 3.7% ([`results/event_study_windows.csv`](results/event_study_windows.csv)). This section splits each day of the fall into a market part, a semiconductor-sector part, alpha and a company-specific part, and compares the result with the DeepSeek day, 27 January 2025.
+
+**What was reported.** Only what the cited sources say:
+
+- **4 and 5 November 2026.** Chip and AI stocks sold off ([Yahoo Finance, live coverage of 5 November](https://finance.yahoo.com/markets/live/stock-market-today-thursday-november-5-dow-sp-500-nasdaq-plunge-chip-stocks-melt-down-193726491.html)). On 5 November SPY fell 4.4% and SMH, a semiconductor ETF, 11.2%.
+- **8 November, a Sunday.** Nvidia's board said it was opening an independent investigation, overseen by a committee of independent directors with outside counsel, after reports that the company's chief executive had been the target of a foreign intelligence effort. The board said it had no reason to believe that national security or Nvidia's secrets had been compromised ([statement from Nvidia's board](https://nvidianews.nvidia.com/news/statement-from-nvidia-board-of-directors); [CNBC, 8 November 2026](https://www.cnbc.com/2026/11/08/nvidia-jensen-huang-investigation-china-spy.html)).
+- **9 November** was the first trading day after the statement.
+
+**Model.** NVDA's daily return r is regressed on SPY's return m and on the sector's return orthogonalised to SPY:
+
+```
+r = alpha + beta_m m + beta_s s* + e,      s* = s - (a + b m)
+```
+
+Here a and b come from a regression of the sector return s on m over the same estimation window, so s* is the sector's move beyond what SPY implies. A day's return splits into four parts that add up to it exactly: market (beta_m m), sector (beta_s s*), alpha, and the company-specific or abnormal part e. Because s* is uncorrelated with SPY inside the estimation window, alpha and beta_m equal the one-factor market model's, and the one-factor abnormal return splits exactly into the sector part and the company-specific part. The z-score is the abnormal return over the residual standard deviation σ of the estimation window, and for a window of L days the cumulative abnormal return over σ√L. It ignores estimation error and says nothing about the shape of the tails, so it is a scale, not a probability.
+
+- **Estimation windows.** One rule for both events: 250 trading days ending 21 trading days before the first day of the event window. For November 2026 (first day 4 November) that is 8 October 2025 to 6 October 2026. It ends on the day of the peak, so even the window that starts at the peak does not overlap it. For DeepSeek (27 January 2025) it is 27 December 2023 to 23 December 2024.
+- **Sector factor.** The primary specification uses SMH, the VanEck Semiconductor ETF. SMH holds Nvidia, its largest holding in Yahoo Finance's holdings data on 11 November 2026, so when Nvidia falls on its own news SMH falls with it, and part of Nvidia's own move is counted as sector. The robustness check uses instead an equal-weight basket of eight large semiconductor stocks without Nvidia (AVGO, AMD, TSM, MU, QCOM, ASML, INTC, TXN), rebalanced daily. All eight trade throughout both estimation windows.
+- **The other six of the seven** get a one-factor SPY model on the same estimation windows.
+
+Coefficients ([`results/event_study_estimation.csv`](results/event_study_estimation.csv)):
+
+| Estimation window | Beta to SPY | Sector beta: SMH | Sector beta: peers | SMH's beta to SPY | Alpha a day | Residual sd a day (SMH model) | R² (SMH model) |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 8 Oct 2025 – 6 Oct 2026 | 1.89 | 0.43 | 0.15 | 2.36 | 0.00% | 1.68% | 0.51 |
+| 27 Dec 2023 – 23 Dec 2024 | 2.70 | 1.36 | 0.76 | 2.21 | 0.21% | 1.76% | 0.72 |
+
+**Each day** ([`results/event_study_days.csv`](results/event_study_days.csv)). Returns are in percent and the parts in percentage points; z is in brackets. "One-factor abnormal" is the abnormal return of a model with SPY alone, which equals the sector part plus the company-specific part. The last two columns repeat the split with the peer basket; the market part and alpha are the same with either sector factor.
+
+| Day | NVDA | SPY | SMH | Market | Sector beyond SPY | Alpha | Company-specific (z) | One-factor abnormal | Peer basket: sector | Peer basket: company-specific (z) |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 4 Nov 2026 | −3.2% | +1.7% | −2.7% | +3.1 | −2.9 | 0.0 | −3.4 (−2.0) | −6.3 | −0.9 | −5.4 (−3.0) |
+| 5 Nov 2026 | −9.3% | −4.4% | −11.2% | −8.3 | −0.4 | 0.0 | −0.6 (−0.3) | −1.0 | −0.2 | −0.7 (−0.4) |
+| 6 Nov 2026 | +2.8% | +0.3% | +3.6% | +0.6 | +1.2 | 0.0 | +1.0 (+0.6) | +2.2 | +0.6 | +1.5 (+0.9) |
+| 9 Nov 2026 | −4.3% | +2.4% | +5.1% | +4.5 | −0.3 | 0.0 | −8.4 (−5.0) | −8.7 | +0.1 | −8.9 (−4.9) |
+| 10 Nov 2026 | −5.5% | −0.4% | −0.8% | −0.7 | 0.0 | 0.0 | −4.8 (−2.8) | −4.8 | +0.2 | −5.0 (−2.8) |
+| 27 Jan 2025 | −17.0% | −1.4% | −9.8% | −3.8 | −9.1 | +0.2 | −4.3 (−2.4) | −13.4 | −3.0 | −10.3 (−4.4) |
+| 28 Jan 2025 | +8.9% | +0.9% | +2.0% | +2.3 | +0.2 | +0.2 | +6.2 (+3.6) | +6.4 | −1.5 | +7.9 (+3.4) |
+
+**Windows** ([`results/event_study_windows.csv`](results/event_study_windows.csv)). Each part is the sum of its daily values, and z is the cumulative abnormal return over σ√L. The parts add up to the sum of the daily returns. "Compounding" is the compound return minus that sum, so the parts plus compounding give the compound return.
+
+| Window | Days | NVDA, compound | SPY, compound | Market | Sector beyond SPY | Alpha | Company-specific (z) | Compounding | Peer basket: sector | Peer basket: company-specific (z) |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 9–10 Nov 2026 (after the board's statement) | 2 | −9.5% | +2.0% | +3.8 | −0.3 | 0.0 | −13.2 (−5.6) | +0.2 | +0.4 | −13.9 (−5.5) |
+| 4–10 Nov 2026 | 5 | −18.3% | −0.6% | −0.8 | −2.4 | 0.0 | −16.1 (−4.3) | +1.1 | −0.1 | −18.5 (−4.6) |
+| 6 Oct 2026 peak to 10 Nov 2026 | 25 | −29.4% | −3.7% | −6.8 | −8.5 | +0.1 | −18.3 (−2.2) | +4.2 | −2.4 | −24.4 (−2.7) |
+| 27 Jan 2025 | 1 | −17.0% | −1.4% | −3.8 | −9.1 | +0.2 | −4.3 (−2.4) | 0.0 | −3.0 | −10.3 (−4.4) |
+| 27–28 Jan 2025 | 2 | −9.6% | −0.6% | −1.5 | −8.9 | +0.4 | +1.9 (+0.8) | −1.5 | −4.6 | −2.4 (−0.7) |
+
+![NVDA's daily return split into parts, with SMH and with the peer basket](results/event_study_parts.png)
+
+- **The headline day, 5 November (−9.3%), was a market and sector day.** SPY fell 4.4%, and at Nvidia's beta of 1.89 that accounts for −8.3 points. SMH fell 11.2%, but its own beta to SPY was 2.36, so most of its fall is what SPY's fall implies, and the sector's move beyond SPY added only −0.4 points. Nvidia's own part was −0.6% (z −0.3), an ordinary day for Nvidia given what the market did. The model counts everything that moves with SPY as market, and SPY itself holds Nvidia and the other chipmakers, so on a day when chip and AI stocks sold off the market part is not independent of the sector.
+- **The investigation day looked small but was a large company-specific move.** On 9 November NVDA fell 4.3% while SPY rose 2.4% and SMH 5.1%. At a beta of 1.89 the market alone implied +4.5 points. The company-specific part was −8.4% (z −5.0) with SMH as the sector factor and −8.9% (z −4.9) with the peer basket. With SMH the sector part is slightly negative (−0.3 points) although SMH rose, because SMH rose less than its beta to SPY implies; SMH holds Nvidia. With the peer basket, which does not, it is +0.1. Over 9 and 10 November together the company-specific parts add up to −13.2% (z −5.6) with SMH and −13.9% (z −5.5) with the peers, while NVDA fell 9.5% and SPY rose 2.0%.
+- **The rest of the seven did not move with Nvidia on 9 November.** In the one-factor model the other six had abnormal returns between −2.1% (GOOGL) and +1.7% (META); the largest z-score among them was GOOGL's −1.2. Nvidia's was −8.7% (z −4.8) ([`results/event_study_megacaps.csv`](results/event_study_megacaps.csv)):
+
+| Ticker | 9 Nov 2026: return | Beta | Abnormal (z) | 27 Jan 2025: return | Beta | Abnormal (z) |
+|---|---:|---:|---:|---:|---:|---:|
+| AAPL | +2.4% | 0.69 | +0.7 (+0.5) | +3.2% | 0.96 | +4.5 (+3.7) |
+| MSFT | +2.7% | 0.96 | +0.5 (+0.3) | −2.1% | 1.19 | −0.4 (−0.5) |
+| GOOGL | +1.2% | 1.35 | −2.1 (−1.2) | −4.2% | 1.24 | −2.5 (−1.7) |
+| AMZN | +2.9% | 1.44 | −0.5 (−0.2) | +0.2% | 1.56 | +2.4 (+1.9) |
+| NVDA | −4.3% | 1.89 | −8.7 (−4.8) | −17.0% | 2.70 | −13.4 (−5.2) |
+| META | +5.1% | 1.45 | +1.7 (+0.7) | +1.9% | 1.55 | +4.0 (+2.1) |
+| TSLA | +5.5% | 2.21 | +0.5 (+0.2) | −2.3% | 2.32 | +0.9 (+0.3) |
+
+- **The DeepSeek day had a large sector part; 9 November did not.** On 27 January 2025 NVDA fell 17.0% while SPY fell 1.4%. With SPY alone the abnormal return was −13.4% (z −5.2), larger than on 9 November. The sector factor splits it, and the split depends on the proxy: with SMH, −9.1 points are sector and −4.3% (z −2.4) company-specific; with the peer basket, −3.0 points are sector and −10.3% (z −4.4) company-specific. SMH holds Nvidia, so Nvidia's own fall is part of SMH's 9.8% fall. The peers themselves split, from AVGO −17.4%, TSM −13.3% and MU −11.7% to QCOM −0.5% and TXN +0.8% ([`results/event_study_sector_members.csv`](results/event_study_sector_members.csv)), so a basket that weights all eight equally dilutes a fall concentrated in some chipmakers. With either proxy the sector part was between −3.0 and −9.1 points, against −0.3 and +0.1 on 9 November. The next day reversed much of Nvidia's own move (+6.2%, z +3.6, with SMH; +7.9% with the peers), leaving +1.9% (z +0.8) or −2.4% (z −0.7) over the two days. After the board's statement there was no such reversal: 10 November added a company-specific −4.8% (z −2.8).
+- **Most of the fall since the peak is company-specific.** Over the 25 trading days from the 6 October peak, the market part is −6.8 points, the sector part −8.5 (SMH) or −2.4 (peers) and the company-specific part −18.3% (z −2.2) or −24.4% (z −2.7). From 4 to 10 November NVDA fell 18.3% while SPY fell 0.6%, and the company-specific parts add up to −16.1% (z −4.3) with SMH and −18.5% (z −4.6) with the peers. The company-specific parts of 4 November (−3.4% or −5.4%) and 10 November (−4.8% or −5.0%) are not explained by the sources cited here, and I have not attributed them to a cause.
+- **The peer basket does not change the November conclusions.** Under both sector factors 5 November is a market day with a company-specific part under 1%, and 9 November is a company-specific day near −5 standard deviations. The basket assigns more of 4 November and of the fall since the peak to Nvidia itself, which is what removing Nvidia from the sector factor should do. It does change the reading of 27 January 2025, from mostly sector (SMH) to mostly company-specific (peers).
+
+**How unusual 9 November was.** A rolling version of the same model is estimated for every day from 2 July 2001, the first day SMH's history allows, to 10 November 2026. Each day's window is the 250 trading days ending 21 days before it, so no day is explained with its own or later returns. Its estimate for a day differs slightly from the event-study one above, whose window is fixed by the event's first day ([`results/event_study_ranks.csv`](results/event_study_ranks.csv)):
+
+| Day | Sector factor | Abnormal | z | Rank of abnormal (lowest = 1) | Rank of z | Days ranked |
+|---|---|---:|---:|---:|---:|---:|
+| 9 Nov 2026 | SMH | −8.4% | −5.0 | 20 | 10 | 6,378 |
+| 9 Nov 2026 | Peers ex-NVDA (equal weight) | −8.8% | −4.9 | 19 | 10 | 6,378 |
+| 27 Jan 2025 | SMH | −4.3% | −2.4 | 126 | 76 | 6,378 |
+| 27 Jan 2025 | Peers ex-NVDA (equal weight) | −10.3% | −4.4 | 14 | 13 | 6,378 |
+
+Under either sector factor, 9 November has the 10th-lowest z-score of 6,378 days. The lowest of all is −31.8% (z −12.5), on 6 August 2004.
+
+**What a risk model sees.** Correlation- and factor-based risk models describe a stock by its betas and a residual variance estimated from past returns. Going into November, that description of Nvidia was a beta of 1.89 to SPY, a sector beta of 0.43 and a residual standard deviation of 1.68% a day. Nothing in those numbers can signal a key-person or governance event. When one comes, it arrives as a residual: on 9 November, −8.4%, five residual standard deviations, on a day when SPY and the semiconductor stocks rose. The model registers it only after the fact, when the day enters the next estimation window and raises the residual variance. Such days sit in the residual tails: in Nvidia's rolling history z fell below −4 on 18 days with SMH as the sector factor (16 with the peers), where a normal distribution would expect 0.2. Correlations, betas and residual variances estimated from past returns will not anticipate this kind of jump, so it has to be covered in other ways, such as scenarios and single-name limits.
+
+Caveats: the event days were chosen after the fact; the z-scores are descriptive, and with residual tails this fat they should not be turned into normal p-values; and the 2024 estimation window gives Nvidia an alpha of 0.21% a day, which adds that much to the expected return on each DeepSeek day.
+
 ## Design
 
 ```
@@ -385,7 +475,8 @@ KenFrenchClient ───┘   returns, calendar years,     aligned       ├─
                        extreme days, joint moves    returns,      ├─> factors.py       (functions + FactorFit)
                                                     factors, RF   ├─> tails.py         (functions)
                                                                   ├─> episodes.py      (functions + Episode)
-                                                                  └─> EqualWeightPortfolio
+                                                                  ├─> EqualWeightPortfolio
+                                                                  └─> EventStudy       (event_study.py, + MarketModelFit)
                                                                               │
                                               scripts/run_*.py ──> ResultsWriter ──> results/*.csv, *.png
 ```
@@ -394,13 +485,14 @@ Classes are used where something has state or a rule to enforce. Calculations th
 
 | Class | Why it is a class | Public interface |
 |---|---|---|
-| `YahooClient` (`sources.py`) | Holds the retry settings so every download behaves the same way | `fetch(ticker)`, `market_cap(ticker)`, `parse_history(...)` |
+| `YahooClient` (`sources.py`) | Holds the retry settings so every download behaves the same way | `fetch(ticker, end)`, `market_cap(ticker)`, `parse_history(...)` |
 | `KenFrenchClient` (`sources.py`) | Holds the HTTP session, timeout and the folder for raw zips | `fetch(name)` |
 | `PriceStore` (`store.py`) | Owns the DuckDB connection; all SQL lives here | `upsert`, `coverage`, `wide`, `returns`, `calendar_year_returns`, `extreme_days`, `joint_move_counts`, `market_caps` |
 | `ReturnPanel` (`panel.py`) | Builds the aligned panel once and serves many views of it with the same sample rules | `returns`, `history`, `rf`, `excess`, `factors`, `start`, `end` |
 | `EqualWeightPortfolio` (`portfolio.py`) | A drifting portfolio has state (today's weights) that the next day's return depends on | `returns`, `weights`, `turnover()` |
 | `ResultsWriter` (`results.py`) | Owns the output folder and the rule that no daily or weekly series is published | `csv`, `figure`, `text` |
-| `FactorFit`, `DrawdownEpisode`, `Episode` | Frozen dataclasses that keep the related numbers of one result together | fields, `to_series()` / `to_dict()` |
+| `EventStudy` (`event_study.py`) | Owns the aligned stock, market and sector returns and the estimation-window rule, so every event, window and rolling estimate uses the same calendar and rule | `estimation_window`, `fit`, `days`, `window`, `rolling` |
+| `FactorFit`, `MarketModelFit`, `DrawdownEpisode`, `Episode` | Frozen dataclasses that keep the related numbers of one result together | fields, `to_series()` / `to_dict()`; `MarketModelFit.parts()` splits returns |
 
 **SQL.** DuckDB keeps every observation in one long table, `observations(dataset, series, date, value)`, plus a `market_caps` snapshot. Simple, weekly and monthly returns are computed in SQL: `lag()` over `PARTITION BY series ORDER BY date`, on the last close of each ISO week or month (`arg_max(value, date)` grouped by `date_trunc('week', date)` or `last_day(date)`). Calendar-year returns are `exp(sum(ln(1 + r)))`. The best and worst days use `row_number()` windows, the joint-move counts `count_if(ret < threshold)` per day, and the coverage report is a `GROUP BY`.
 
@@ -416,9 +508,9 @@ cd "/path/to/Projects/mega7-decomposition"
 uv pip install --python ~/.venvs/mega7-decomposition/bin/python -e ".[dev]"
 source ~/.venvs/mega7-decomposition/bin/activate
 
-pytest -q                          # 70 tests on synthetic data, no network needed
+pytest -q                          # 80 tests on synthetic data, no network needed
 python scripts/download_data.py    # Yahoo Finance + Ken French -> data/mega7.duckdb; coverage and checks -> results/
-python scripts/run_all.py          # all five analyses below, in order
+python scripts/run_all.py          # all six analyses below, in order
 ```
 
 Or run the analyses one at a time:
@@ -429,7 +521,10 @@ python scripts/run_correlation.py  # correlations by frequency, rolling, conditi
 python scripts/run_factors.py      # FF5 + momentum regressions, variance split, rolling betas, residual correlation
 python scripts/run_portfolio.py    # equal-weight portfolio vs SPY/QQQ/RSP, risk contributions, SPY - RSP
 python scripts/run_tails.py        # joint 5% moves against independence and a Gaussian copula
+python scripts/run_event_study.py  # NVDA's November 2026 sell-off and 27 January 2025: market, sector and own parts
 ```
+
+`download_data.py --end 2026-11-10` cuts every price series at that close. To add SMH and the semiconductor peers to a database built before they were part of the project, without downloading anything else again, run `python scripts/download_data.py --semis-only`; the new series are cut at the last SPY close already stored (here 10 November 2026), unless `--end` says otherwise.
 
 Without `uv`: `python -m venv .venv && source .venv/bin/activate && pip install -e ".[dev]"`. The tests also run on GitHub Actions on Python 3.10 and 3.12.
 

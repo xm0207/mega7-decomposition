@@ -6,7 +6,8 @@ import runpy
 import sys
 from pathlib import Path
 
-SCRIPTS = ["run_stock_risk.py", "run_correlation.py", "run_factors.py", "run_portfolio.py", "run_tails.py"]
+SCRIPTS = ["run_stock_risk.py", "run_correlation.py", "run_factors.py", "run_portfolio.py", "run_tails.py",
+           "run_event_study.py"]
 
 
 def main() -> None:

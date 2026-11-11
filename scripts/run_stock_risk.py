@@ -74,6 +74,7 @@ def main() -> None:
     writer.csv("drawdown_episodes", episodes_table(panel))
 
     extremes = store.extreme_days(n=5)
+    extremes = extremes[extremes["series"].isin(TICKERS)].copy()  # the store also holds the event study's semiconductors
     spy = panel.history("SPY")
     extremes["date"] = pd.to_datetime(extremes["date"])
     extremes["spy_same_day"] = extremes["date"].map(spy)
@@ -81,6 +82,7 @@ def main() -> None:
     writer.csv("extreme_days", extremes.rename(columns={"series": "ticker", "ret": "return"}))
 
     years = store.calendar_year_returns(start=str(panel.start.date()))
+    years = years[years["series"].isin(TICKERS)]
     table = years.pivot(index="year", columns="series", values="total_return")[TICKERS]
     table["days"] = years.groupby("year")["days"].max()
     writer.csv("calendar_year_returns", table.reset_index())

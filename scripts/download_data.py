@@ -1,5 +1,10 @@
 """Download prices (Yahoo Finance) and factors (Ken French) into data/mega7.duckdb, and check them.
 
+Prices: the ten tickers, plus the semiconductor ETF (SMH) and eight semiconductor peers used only by
+the event study. `--end` cuts every series at one last close. `--semis-only` adds SMH and the peers
+to an existing database, cut at the last stored SPY close unless `--end` is given, and leaves the other
+prices, the factors and the market-cap snapshot as they are.
+
 Writes to results/ only coverage and data-check summaries, never prices or returns.
 """
 
@@ -11,7 +16,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from mega7 import STOCKS, TICKERS, KenFrenchClient, PriceStore, ResultsWriter, YahooClient
+from mega7 import SEMIS, STOCKS, TICKERS, KenFrenchClient, PriceStore, ResultsWriter, YahooClient
 from mega7.sources import first_table
 
 FRENCH_FILES = {
@@ -29,13 +34,13 @@ def long_format(wide: pd.DataFrame) -> pd.DataFrame:
     return long.dropna(subset=["value"])
 
 
-def data_checks(store: PriceStore) -> pd.DataFrame:
+def data_checks(store: PriceStore, tickers: list[str]) -> pd.DataFrame:
     """Per ticker: calendar gaps against SPY in the common sample, zero-return days, very large moves."""
     daily = store.returns("daily")
     common_start = daily[STOCKS].dropna().index[0]
     spy_days = daily["SPY"].dropna().loc[common_start:].index
     rows = []
-    for t in TICKERS:
+    for t in tickers:
         r = daily[t].dropna()
         common = r.loc[common_start:]
         closes = store.wide("price", [t])[t].dropna()
@@ -56,21 +61,56 @@ def data_checks(store: PriceStore) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def download_prices(yahoo: YahooClient, store: PriceStore, tickers: list[str], end: str | None) -> None:
+    for ticker in tickers:
+        frame = yahoo.fetch(ticker, end=end)
+        rows = store.upsert("price", frame)
+        print(f"{ticker:<6} {rows:>6} closes  {frame['date'].min().date()} to {frame['date'].max().date()}")
+
+
+def write_coverage(store: PriceStore, writer: ResultsWriter) -> None:
+    """First and last date and row count of every price series, and of each factor dataset."""
+    coverage = store.coverage()
+    prices = coverage[coverage["dataset"] == "price"].drop(columns="dataset")
+    french = (
+        coverage[coverage["dataset"] != "price"]
+        .groupby("dataset")
+        .agg(first_date=("first_date", "min"), last_date=("last_date", "max"), observations=("observations", "max"))
+        .reset_index()
+        .rename(columns={"dataset": "series"})
+    )
+    writer.csv("data_coverage", pd.concat([prices, french], ignore_index=True))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--db", default="data/mega7.duckdb")
     parser.add_argument("--raw", default="data/raw")
     parser.add_argument("--results", default="results")
+    parser.add_argument("--end", default=None, help="last close to keep, YYYY-MM-DD (default: every finished close)")
+    parser.add_argument("--semis-only", action="store_true",
+                        help="add only SMH and the semiconductor peers to an existing database")
     args = parser.parse_args()
 
     store = PriceStore(args.db)
     writer = ResultsWriter(args.results)
-
     yahoo = YahooClient()
-    for ticker in TICKERS:
-        frame = yahoo.fetch(ticker)
-        rows = store.upsert("price", frame)
-        print(f"{ticker:<6} {rows:>6} closes  {frame['date'].min().date()} to {frame['date'].max().date()}")
+
+    if args.semis_only:
+        try:
+            last_spy = store.wide("price", ["SPY"])["SPY"].dropna().index[-1]
+        except KeyError as error:
+            raise SystemExit("--semis-only needs a database that already holds SPY; run without it first") from error
+        end = args.end or str(last_spy.date())
+        download_prices(yahoo, store, SEMIS, end)
+        write_coverage(store, writer)
+        checks = data_checks(store, TICKERS + SEMIS)
+        writer.csv("data_checks", checks)
+        print(checks.to_string(index=False))
+        store.close()
+        return
+
+    download_prices(yahoo, store, TICKERS + SEMIS, args.end)
 
     as_of = pd.Timestamp.now(tz="America/New_York").date()
     caps = pd.DataFrame(
@@ -86,19 +126,9 @@ def main() -> None:
         store.upsert(f"french_{frequency}", long_format(wide))
         print(f"Ken French {frequency}: {wide.index[0].date()} to {wide.index[-1].date()}, columns {list(wide.columns)}")
 
-    coverage = store.coverage()
-    coverage = coverage[coverage["dataset"] == "price"].drop(columns="dataset")
-    french_cov = store.coverage()
-    french_cov = (
-        french_cov[french_cov["dataset"] != "price"]
-        .groupby("dataset")
-        .agg(first_date=("first_date", "min"), last_date=("last_date", "max"), observations=("observations", "max"))
-        .reset_index()
-        .rename(columns={"dataset": "series"})
-    )
-    writer.csv("data_coverage", pd.concat([coverage, french_cov], ignore_index=True))
+    write_coverage(store, writer)
 
-    checks = data_checks(store)
+    checks = data_checks(store, TICKERS + SEMIS)
     writer.csv("data_checks", checks)
     print(checks.to_string(index=False))
 

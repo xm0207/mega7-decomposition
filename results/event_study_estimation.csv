@@ -1,0 +1,7 @@
+event,first_event_day,model,sector_factor,estimation_start,estimation_end,observations,alpha_daily,beta_market,beta_sector,sector_intercept,sector_beta_to_market,residual_sd_daily,r_squared,peer_members_min
+November 2026,2026-11-04,two-factor,SMH,2025-10-08,2026-10-06,250,2.7309e-05,1.88506,0.432305,0.00122996,2.36264,0.0167914,0.507222,
+November 2026,2026-11-04,two-factor,Peers ex-NVDA (equal weight),2025-10-08,2026-10-06,250,2.7309e-05,1.88506,0.153971,0.00194784,2.43453,0.0179319,0.438004,8
+November 2026,2026-11-04,one-factor,none (one-factor),2025-10-08,2026-10-06,250,2.7309e-05,1.88506,,,,0.0181297,0.423212,
+"DeepSeek, January 2025",2025-01-27,two-factor,SMH,2023-12-27,2024-12-23,250,0.0020837,2.69978,1.36141,-0.000498123,2.21242,0.0175612,0.721101,
+"DeepSeek, January 2025",2025-01-27,two-factor,Peers ex-NVDA (equal weight),2023-12-27,2024-12-23,250,0.0020837,2.69978,0.757308,-0.00131913,2.08746,0.0233622,0.506412,8
+"DeepSeek, January 2025",2025-01-27,one-factor,none (one-factor),2023-12-27,2024-12-23,250,0.0020837,2.69978,,,,0.0255031,0.409418,

@@ -32,7 +32,9 @@ class YahooClient:
     Why a class: the retry settings (how many attempts, how long to wait) belong together and are
     set once, then every download uses them. Public interface:
 
-    - `fetch(ticker)` returns one row per finished trading day: series, date, value (adjusted close).
+    - `fetch(ticker, end=None)` returns one row per finished trading day: series, date, value
+      (adjusted close). With `end`, days after it are dropped, so a series added later can be cut
+      at the same last close as the series already stored.
     - `market_cap(ticker)` returns today's market capitalisation in dollars, or None if Yahoo has none.
 
     Yahoo sometimes answers with an empty table when it is rate limiting, so `fetch` tries `attempts`
@@ -47,14 +49,15 @@ class YahooClient:
         self.attempts = attempts
         self.pause = pause
 
-    def fetch(self, ticker: str) -> pd.DataFrame:
-        """Return one row per finished trading day: series (the ticker), date, value (adjusted close)."""
+    def fetch(self, ticker: str, end: str | pd.Timestamp | None = None) -> pd.DataFrame:
+        """Return one row per finished trading day up to `end` (inclusive, if given): series (the
+        ticker), date, value (adjusted close)."""
         yf = self._yfinance()
         last_error: Exception | None = None
         for attempt in range(1, self.attempts + 1):
             try:
                 history = yf.Ticker(ticker).history(period="max", interval="1d", auto_adjust=True, actions=False)
-                frame = self.parse_history(ticker, history)
+                frame = self.parse_history(ticker, history, end=end)
                 if not frame.empty:
                     return frame
             except Exception as error:  # yfinance raises its own errors, e.g. when rate limited
@@ -81,8 +84,11 @@ class YahooClient:
         return None
 
     @staticmethod
-    def parse_history(ticker: str, history: pd.DataFrame, today: pd.Timestamp | None = None) -> pd.DataFrame:
-        """Turn yfinance's `Ticker.history()` frame into long rows, dropping missing and unfinished closes.
+    def parse_history(
+        ticker: str, history: pd.DataFrame, today: pd.Timestamp | None = None, end: str | pd.Timestamp | None = None
+    ) -> pd.DataFrame:
+        """Turn yfinance's `Ticker.history()` frame into long rows, dropping missing and unfinished closes,
+        and any close dated after `end` (a calendar date, inclusive) if one is given.
 
         `today` is only for tests; by default it is the current date in the exchange's time zone.
         """
@@ -96,6 +102,8 @@ class YahooClient:
             today = today.tz_localize(index.tz)
         finished = index < today
         dates = (index.tz_localize(None) if index.tz is not None else index).normalize()
+        if end is not None:
+            finished = finished & (dates <= pd.Timestamp(end).normalize())
         frame = pd.DataFrame(
             {"series": ticker, "date": dates[finished], "value": close.to_numpy(dtype=float)[finished]}
         )
